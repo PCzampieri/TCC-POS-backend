@@ -1,3 +1,7 @@
+const sharp = require('sharp')
+const path = require('path')
+const fs = require('fs')
+
 const get = ({ db }) => async(req, res) => {  
     const posts = await db.select({
       id: 'posts.id' ,
@@ -7,8 +11,14 @@ const get = ({ db }) => async(req, res) => {
       image_url: 'posts.image_url',
       name: 'users.name',
       email: 'users.email',
-      category_id: 'posts.category_id'
-    }).from('posts').leftJoin('users', 'users.id', 'posts.user_id')
+      category_id: 'posts.category_id',
+      category: 'categories.name',
+    }).from('posts')
+      .leftJoin('users', 'users.id', 'posts.user_id').orderBy('date', 'desc')
+      .leftJoin('categories', 'categories.id', 'posts.category_id')
+                  
+      
+      
     if (posts.length === 0) {
       return res.send({ error: true })
     }
@@ -36,8 +46,8 @@ const getByCategories = ({ db }) => async(req, res) => {
     email: 'users.email',
     category_id: 'posts.category_id',
     category: 'categories.name' })
-                  .from('posts').leftJoin('users', 'users.id', 'posts.user_id')
-                  .leftJoin('categories', 'categories.id', 'posts.category_id')
+                  .from('posts').leftJoin('users', 'users.id', 'posts.user_id')                  
+                  .leftJoin('categories', 'categories.id', 'posts.category_id').orderBy('date', 'desc')
                   .where('category_id', function(){
                     this
                         .select('categories.id')
@@ -67,11 +77,25 @@ const remove = ({ db }) => async(req, res) => {
 const create = ({ db })=> async(req, res) => {
   const { user } = res.locals
   const newPost = req.body
+  const { filename: image_url} = req.file
+
+  const [name] = image_url.split('.')
+  const filename = `${name}.jpg`
+
+  await sharp(req.file.path)
+    .resize(500, 375)
+    .jpeg({ quality: 70 })
+    .toFile(
+      path.resolve(req.file.destination, 'resized', filename)
+    )
+  
+  fs.unlinkSync(req.file.path)
+
   const postToInsert = {
     title: newPost.title,
     post: newPost.post,
     date: newPost.date,
-    image_url: newPost.image_url,
+    image_url: filename,
     user_id: newPost.user_id,
     category_id: newPost.category_id
   }
