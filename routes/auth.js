@@ -5,7 +5,7 @@ const checkJWT = ({ jwt, jwtSecret }) => (req, res, next) => {
       if (err) {
         res.status(401)
         res.send({
-          error: 'malformed or invalid token'
+          error: 'Token inválido!'
         })
       } else {
         res.locals.user = decoded
@@ -15,7 +15,7 @@ const checkJWT = ({ jwt, jwtSecret }) => (req, res, next) => {
   } else {
     res.status(401)
     res.send({
-      error: 'malformed or invalid token'
+      error: 'Token inválido!'
     })
   }
 }
