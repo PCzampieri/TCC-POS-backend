@@ -16,7 +16,7 @@ router.post('/', auth.injectUserFromToken({ jwt, jwtSecret }), userCheck, contro
 router.use(auth.checkJWT({ jwt, jwtSecret }))
 router.get('/', controller.get({ db }))
 router.get('/me', controller.getMe({ db }))
-router.patch('/:id', userCheck, controller.update({ db }))
+router.patch('/:id', controller.update({ db }))
 router.get('/:id', controller.getOne({ db }))
 router.delete('/:id', controller.remove({ db }))
 

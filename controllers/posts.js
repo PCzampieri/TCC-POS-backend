@@ -18,8 +18,6 @@ const get = ({ db }) => async(req, res) => {
     }).from('posts')
       .leftJoin('users', 'users.id', 'posts.user_id').orderBy('date', 'desc')
       .leftJoin('categories', 'categories.id', 'posts.category_id')
-                  
-      
       
     if (posts.length === 0) {
       return res.send({ error: true })
@@ -29,12 +27,25 @@ const get = ({ db }) => async(req, res) => {
 
 const getOne = ({ db }) => async(req, res) => {  
   let id = req.params.id
-  const post = await db('posts').select().where('id', id)
+  const post = await db.select({
+    id: 'posts.id' ,
+    title: 'posts.title',
+    post: 'posts.post',
+    date: 'posts.date',
+    image_url: 'posts.image_url',
+    name: 'users.name',
+    email: 'users.email',   
+    category: 'categories.name',
+  }).from('posts')
+    .leftJoin('users', 'users.id', 'posts.user_id')
+    .leftJoin('categories', 'categories.id', 'posts.category_id')
+    .where('posts.id', id)
+    
   if (post.length === 0) {
     res.status(401)
     return res.send({ error: true })
   }
-  res.send(post[0])
+  res.send({ data: post[0] })
 }
 
 const getByCategories = ({ db }) => async(req, res) => {  

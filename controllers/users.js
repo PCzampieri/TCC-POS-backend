@@ -103,43 +103,32 @@ const create = ({ db }) => async(req, res) => {
   }
 }
 
-const update = ({db }) => async(req, res) => {
-  try{
-    const errors = validationResult(req)
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ error: errors.array() });
-    }
-    const { user } = res.locals
-    const updatedUser = req.body
-    let { id } = req.params
-    const userToUpdate= {}  
-    if (updatedUser.passwd) {
-      userToUpdate.passwd = bcrypt.hashSync(updatedUser.passwd, salt_rounds)
-    }
-    const fields = ['name', 'email', 'role']
-    fields.forEach(field => {
-      if (updatedUser[field]) {
-        userToUpdate[field] = updatedUser[field]
-      }    
-    })
-    if (user.role === 'user') {
-      userToUpdate['role'] = 'user'
-    }
-    if (user.role === 'user' && user.id != id) {
-      return res.send({error: true, msg: 'Somente administradores podem alterar!' })
-    }
-
-    await db('users')
-      .where('id', id)
-      .update(userToUpdate)
-
-    res.send(userToUpdate)   
-  }catch(e){
-    res.send({
-        success: false,
-        error: Object.keys(e.errors)
-    })
+const update = ({db }) => async(req, res) => { 
+  const { user } = res.locals
+  const updatedUser = req.body
+  let { id } = req.params
+  const userToUpdate= {}  
+  if (updatedUser.passwd) {
+    userToUpdate.passwd = bcrypt.hashSync(updatedUser.passwd, salt_rounds)
   }
+  const fields = ['name', 'email', 'role']
+  fields.forEach(field => {
+    if (updatedUser[field]) {
+      userToUpdate[field] = updatedUser[field]
+    }    
+  })
+  if (user.role === 'user') {
+    userToUpdate['role'] = 'user'
+  }
+  if (user.role === 'user' && user.id != id) {
+    return res.send({error: true, msg: 'Somente administradores podem alterar!' })
+  }
+
+  await db('users')
+    .where('id', id)
+    .update(userToUpdate)
+
+  res.send(userToUpdate)   
 }
 
 module.exports = {
