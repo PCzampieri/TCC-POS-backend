@@ -1,6 +1,7 @@
 const sharp = require('sharp')
 const path = require('path')
 const fs = require('fs')
+const moment = require('moment')
 
 const { check, validationResult } = require('express-validator')
 
@@ -9,14 +10,14 @@ const get = ({ db }) => async(req, res) => {
       id: 'posts.id' ,
       title: 'posts.title',
       post: 'posts.post',
-      date: 'posts.date',
+      created_at: 'posts.created_at',
       image_url: 'posts.image_url',
       name: 'users.name',
       email: 'users.email',
       category_id: 'posts.category_id',
       category: 'categories.name',
     }).from('posts')
-      .leftJoin('users', 'users.id', 'posts.user_id').orderBy('date', 'desc')
+      .leftJoin('users', 'users.id', 'posts.user_id').orderBy('created_at', 'desc')
       .leftJoin('categories', 'categories.id', 'posts.category_id')
       
     if (posts.length === 0) {
@@ -31,7 +32,7 @@ const getOne = ({ db }) => async(req, res) => {
     id: 'posts.id' ,
     title: 'posts.title',
     post: 'posts.post',
-    date: 'posts.date',
+    created_at: 'posts.created_at',
     image_url: 'posts.image_url',
     name: 'users.name',
     email: 'users.email',   
@@ -53,14 +54,14 @@ const getByCategories = ({ db }) => async(req, res) => {
     id: 'posts.id' ,
     title: 'posts.title',
     post: 'posts.post',
-    date: 'posts.date',
+    created_at: 'posts.created_at',
     image_url: 'posts.image_url',
     name: 'users.name',
     email: 'users.email',
     category_id: 'posts.category_id',
     category: 'categories.name' })
                   .from('posts').leftJoin('users', 'users.id', 'posts.user_id')                  
-                  .leftJoin('categories', 'categories.id', 'posts.category_id').orderBy('date', 'desc')
+                  .leftJoin('categories', 'categories.id', 'posts.category_id').orderBy('created_at', 'desc')
                   .where('category_id', function(){
                     this
                         .select('categories.id')
@@ -108,13 +109,13 @@ const create = ({ db })=> async(req, res) => {
         path.resolve(req.file.destination, 'resized', filename)
       )
     
-    fs.unlinkSync(req.file.path)
+    fs.unlinkSync(req.file.path)   
 
     const postToInsert = {
       title: newPost.title,
-      post: newPost.post,
-      date: newPost.date,
+      post: newPost.post,      
       image_url: filename,
+      created_at: new Date(),
       user_id: newPost.user_id,
       category_id: newPost.category_id
     }
@@ -146,22 +147,54 @@ const update = ({ db })=> async(req, res) => {
     if ((post.length === 0) || (user.role === 'user' && post[0].user_id != user.id)) {
       res.status(401)
       return res.send({ error: true })
+    }        
+  
+    if (req.file != undefined) {
+      const { filename: image_url} = req.file
+      const [name] = image_url.split('.')
+      const filename = `${name}.jpg`
+
+      await sharp(req.file.path)
+        .resize(500, 375)
+        .jpeg({ quality: 70 })
+        .toFile(
+          path.resolve(req.file.destination, 'resized', filename)
+        )
+      
+      fs.unlinkSync(req.file.path)
+
+      const postToUpdate = {
+        title: updatePost.title,
+        post: updatePost.post,
+        created_at: new Date(),
+        image_url: filename,
+        user_id: updatePost.user_id,
+        category_id: updatePost.category_id
+      }
+      if (user.role === 'admin') {
+        await db('posts').where('id', id).update(postToUpdate)
+        res.send(postToUpdate)
+      } else {
+        res.send({ error: true, msg: 'Somente Administradores podem fazer alterações! ' })
+      }
+
+    } else {        
+      const postToUpdate = {
+        title: updatePost.title,
+        post: updatePost.post,
+        created_at: new Date(),
+        image_url: updatePost.image_url,
+        user_id: updatePost.user_id,
+        category_id: updatePost.category_id
+      }
+      if (user.role === 'admin') {
+        await db('posts').where('id', id).update(postToUpdate)
+        res.send(postToUpdate)
+      } else {
+        res.send({ error: true, msg: 'Somente Administradores podem fazer alterações! ' })
+      }      
     }
 
-    const postToUpdate = {
-      title: updatePost.title,
-      post: updatePost.post,
-      date: updatePost.date,
-      image_url: updatePost.image_url,
-      user_id: updatePost.user_id,
-      category_id: updatePost.category_id
-    }
-    if (user.role === 'admin') {
-      await db('posts').where('id', id).update(postToUpdate)
-      res.send(postToUpdate)
-    } else {
-      res.send({ error: true, msg: 'Somente Administradores podem fazer alterações! ' })
-    }
   }catch(e){
     res.send({
         success: false,

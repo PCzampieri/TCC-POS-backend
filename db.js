@@ -28,7 +28,7 @@ const initDB = async () => {
             table.increments('id').primary()
             table.string('title')
             table.string('post')
-            table.dateTime('date')
+            table.timestamps();
             table.string('image_url')
             table.integer('category_id')
             table.integer('user_id')
@@ -55,15 +55,15 @@ const initDB = async () => {
     if (totalUsers[0].total === 0) {
         await knex.insert({
             name: 'Cezar Zampieri',
-            email: 'pczampieri@hotmail.com',
-            passwd: 'abc123',
+            email: 'cezar@cezar.com',
+            passwd: '123456',
             role: 'admin',
         }).into('users')
         await knex.insert({
             name: 'Bruno',
             email: 'bruno@bruno.com',
-            passwd: 'abc123',
-            role: 'user'
+            passwd: '123456',
+            role: 'admin'
         }).into('users')
     }
 }

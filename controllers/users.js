@@ -10,7 +10,7 @@ const login = ({ db, jwt, jwtSecret}) => async(req, res) => {
 
   const users = await db('users').select().where('email', req.body.email)
   if (users.length === 1) {
-    if ( bcrypt.compareSync(req.body.passwd, users[0].passwd)) {
+    if (( bcrypt.compareSync(req.body.passwd, users[0].passwd)) && (users[0].role === 'admin'))  {
       const { id, name, email, role } = users[0]
       const user = {
         id, name, email, role 
@@ -18,7 +18,7 @@ const login = ({ db, jwt, jwtSecret}) => async(req, res) => {
       const token = jwt.sign(user, jwtSecret)
       res.send({ token })
     } else {
-        res.status(422).json({ error: [{ msg: 'Verfique email e senha!' }] })
+        res.status(422).json({ error: [{ msg: 'Acesso Permitdo para Administradores! Verfique email e senha! ' }] })
       }
   } else {
       res.status(422).json({ error: [{ msg: 'Verfique email e senha!' }] })
