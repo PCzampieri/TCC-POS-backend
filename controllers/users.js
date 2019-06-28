@@ -123,6 +123,12 @@ const update = ({db }) => async(req, res) => {
   if (user.role === 'user' && user.id != id) {
     return res.send({error: true, msg: 'Somente administradores podem alterar!' })
   }
+  if (updatedUser.email) {
+    const emailAlreadyExists = await db('users').select(db.raw('count(*) as total')).where('email', updatedUser.email)
+      if (emailAlreadyExists[0].total > 0) {
+        return res.status(422).json({ error: [{'msg': 'E-mail já Cadastrado!'}] })
+      }
+  }
 
   await db('users')
     .where('id', id)
